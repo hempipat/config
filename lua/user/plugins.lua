@@ -102,6 +102,8 @@ return packer.startup(function(use)
   use { "rcarriga/nvim-dap-ui" }
   use { "ravenxrz/DAPInstall.nvim" }
 
+  use { "tjdevries/express_line.nvim" }
+
   -- fzf
   use { "junegunn/fzf" }
 

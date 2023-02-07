@@ -237,3 +237,4 @@ vim.cmd "command! -buffer JdtUpdateConfig lua require('jdtls').update_project_co
 -- -- vim.cmd "command! -buffer JdtJol lua require('jdtls').jol()"
 -- vim.cmd "command! -buffer JdtBytecode lua require('jdtls').javap()"
 -- -- vim.cmd "command! -buffer JdtJshell lua require('jdtls').jshell()"
+

@@ -1,5 +1,5 @@
-vim.opt_local.shiftwidth = 2
-vim.opt_local.tabstop = 2
+vim.opt_local.shiftwidth = 4
+vim.opt_local.tabstop = 4
 vim.opt_local.cmdheight = 2 -- more space in the neovim command line for displaying messages
 
 -- local capabilities = require("lvim.lsp").common_capabilities()
@@ -15,7 +15,8 @@ if vim.fn.has("mac") == 1 then
 	WORKSPACE_PATH = home .. "/workspace/"
 	CONFIG = "mac"
 elseif vim.fn.has("unix") == 1 then
-	WORKSPACE_PATH = home .. "/workspace/" CONFIG = "linux"
+	WORKSPACE_PATH = home .. "/workspace/"
+	CONFIG = "linux"
 else
 	print("Unsupported system")
 end
@@ -87,7 +88,6 @@ local config = {
 		"-data",
 		workspace_dir,
 	},
-
 	-- on_attach = require("lvim.lsp").on_attach,
 	-- on_attach = require("user.lsp.handlers").on_attach,
 	-- capabilities = capabilities,
@@ -96,7 +96,6 @@ local config = {
 	-- This is the default if not provided, you can remove it. Or adjust as needed.
 	-- One dedicated LSP server & client will be started per unique root_dir
 	root_dir = root_dir,
-
 	-- Here you can configure eclipse.jdt.ls specific settings
 	-- See https://github.com/eclipse/eclipse.jdt.ls/wiki/Running-the-JAVA-LS-server-from-the-command-line#initialize-request
 	-- or https://github.com/redhat-developer/vscode-java#supported-vs-code-settings
@@ -169,17 +168,14 @@ local config = {
 			},
 		},
 		codeGeneration = {
-			toString = {
-				template = "${object.className}{${member.name()}=${member.value}, ${otherMembers}}",
+			toString = { template = "${object.className}{${member.name()}=${member.value}, ${otherMembers}}",
 			},
 			useBlocks = true,
 		},
 	},
-
 	flags = {
 		allow_incremental_sync = true,
 	},
-
 	-- Language server `initializationOptions`
 	-- You need to extend the `bundles` with paths to jar files
 	-- if you want to use additional eclipse.jdt.ls plugins.
@@ -193,13 +189,15 @@ local config = {
 	},
 }
 
+-- require('jdtls').start_or_attach(config)
+
 config["on_attach"] = function(client, bufnr)
 	local _, _ = pcall(vim.lsp.codelens.refresh)
-	require("jdtls.dap").setup_dap_main_class_configs()
-	jdtls.setup_dap({ hotcodereplace = "auto" })
+	-- require("jdtls.dap").setup_dap_main_class_configs()
+	-- jdtls.setup_dap({ hotcodereplace = "auto" })
 	-- require("lvim.lsp").common_on_attach(client, bufnr)
-  -- here !!!!
-  require("user.lsp.handlers").on_attach(client, bufnr)
+	-- here !!!!
+	-- require("y.lsp").on_attach(client, bufnr)
 	local map = function(mode, lhs, rhs, desc)
 		if desc then
 			desc = desc
@@ -218,23 +216,20 @@ config["on_attach"] = function(client, bufnr)
 	map("v", "<leader>Cm", "<Esc><Cmd>lua require('jdtls').extract_method(true)<CR>", "Extract Method")
 end
 
-vim.api.nvim_create_autocmd({ "BufWritePost" }, {
-	pattern = { "*.java" },
-	callback = function()
-		local _, _ = pcall(vim.lsp.codelens.refresh)
-	end,
-})
+-- vim.api.nvim_create_autocmd({
+-- pattern = { "*.java" },
+--	callback = function()
+--		local _, _ = pcall(vim.lsp.codelens.refresh)
+--	end,
+-- }, { "BufWritePost" })
 
 -- This starts a new client & server,
 -- or attaches to an existing client & server depending on the `root_dir`.
 jdtls.start_or_attach(config)
 
-vim.cmd(
-	[[command! -buffer -nargs=? -complete=custom,v:lua.require'jdtls'._complete_set_runtime JdtSetRuntime lua require('jdtls').set_runtime(<f-args>)]]
-)
+-- vim.cmd([[command! -buffer -nargs=? -complete=custom,v:lua.require'jdtls'._complete_set_runtime JdtSetRuntime lua require('jdtls').set_runtime(<f-args>)]])
 -- vim.cmd "command! -buffer -nargs=? -complete=custom,v:lua.require'jdtls'._complete_compile JdtCompile lua require('jdtls').compile(<f-args>)"
-vim.cmd "command! -buffer JdtUpdateConfig lua require('jdtls').update_project_config()"
+-- vim.cmd "command! -buffer JdtUpdateConfig lua require('jdtls').update_project_config()"
 -- -- vim.cmd "command! -buffer JdtJol lua require('jdtls').jol()"
 -- vim.cmd "command! -buffer JdtBytecode lua require('jdtls').javap()"
 -- -- vim.cmd "command! -buffer JdtJshell lua require('jdtls').jshell()"
-

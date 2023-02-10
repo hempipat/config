@@ -1,20 +1,18 @@
-require "user.options" -- vim options
-require "user.plugins" --plugins
-require "user.keymapping" -- general key mapping (not plugin-related)
-require "user.colorscheme" -- color
+vim.g.mapleader = "," -- make sure to set `mapleader` before lazy so your mappings are correct
 
-require "user.cmp" -- completion engine
-require "user.lsp" -- lsp configuration
-require "user.dap" -- dap config
-require "user.autopairs" -- autopairs config
-require "user.gitsigns" -- git stuff
-require "user.nvimtree" -- nvim tree
-require "user.bufferline"
--- require "user.lualine" -- lualine 
-require "user.treesitter" -- treesitter configuration
-require "user.indentline" -- highlight indents
-require "user.toggleterm"
-require "user.telescope"
+local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+if not vim.loop.fs_stat(lazypath) then
+  vim.fn.system({
+    "git",
+    "clone",
+    "--filter=blob:none",
+    "https://github.com/folke/lazy.nvim.git",
+    "--branch=stable", -- latest stable release
+    lazypath,
+  })
+end
+vim.opt.rtp:prepend(lazypath)
 
-require "user.comment" -- comments
-require "user.autocommands"
+require("lazy").setup("y.plugins",{
+})
+

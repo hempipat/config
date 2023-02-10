@@ -1,106 +1,123 @@
--- TODO: Need to add those sweet sweet lsp workspace diagnositc counts
+vim.cmd([[
+    " ------ Statusline
 
--- RELOAD "el"
-require("el").reset_windows()
+    set noshowmode
 
-local builtin = require "el.builtin"
-local extensions = require "el.extensions"
-local sections = require "el.sections"
-local subscribe = require "el.subscribe"
-local lsp_statusline = require "el.plugins.lsp_status"
-local helper = require "el.helper"
+    set laststatus=2
 
+    set statusline=%9*
 
+    "Status
+    set statusline+=%#StatusBalloonColor#
+    set statusline+=%#StatusBarColor#
+    set statusline+=\ \ 
+    set statusline+=%{StatuslineMode()}
+    set statusline+=%m
+    set statusline+=\ \ 
+    set statusline+=%#StatusBalloonColor#
+    set statusline+=%=
 
--- TODO: Spinning planet extension. Integrated w/ telescope.
--- ◐ ◓ ◑ ◒
--- 🌛︎🌝︎🌜︎🌚︎
--- Show telescope icon / emoji when you open it as well
+    "Filename
+    set statusline+=%6*\ \ 
+    set statusline+=%.60F
+    set statusline+=%6*\ \ 
+    "Column
+    set statusline+=%=
+    set statusline+=%6*\ 
+    "Filetype
+    " set statusline+=%{LspStatus()}
+    set statusline+=%6*\ 
+    set statusline+=%2*\ 
+    set statusline+=%{CheckFT(&filetype)}
+    set statusline+=%2*\ 
+    set statusline+=\|
+    set statusline+=%2*\ 
+    set statusline+=%l
+    set statusline+=:
+    set statusline+=%L
+    set statusline+=%2*\ 
+    set statusline+=\|
+    set statusline+=%2*\ 
+    set statusline+=%c
+    set statusline+=\ \ 
 
-local minimal_status_line = function(_, buffer)
-  if string.find(buffer.name, "sourcegraph/sourcegraph") then
-    return true
-  end
-end
+    " Balloon
+    hi link User2 NormalColor
+    " Alt balloon
+    hi link User3 NormalAlt
+    " For rounders
+    hi link User4 NormalColorFG
+    " Alt rounders
+    hi link User5 NormalAltFG
+    hi link User6 FancyTextColor
+    hi link User7 FancyTextColorTwo
+    hi link User8 FancyTextColorThree
+    hi link User1 FancyTextColorThreeFG
+    " Clear
+    hi User9 guifg=white 
 
-local git_icon = subscribe.buf_autocmd("el_file_icon", "BufRead", function(_, bufnr)
-  local icon = extensions.file_icon(_, bufnr)
-  if icon then
-    return icon .. " "
-  end
+    hi FancyTextColor guifg=#cec09a guibg=#202330
+    hi FancyTextColorTwo guifg=#fff0f5 guibg=#2d2f42
+    hi FancyTextColorThree guifg=#f39305 guibg=#242021
+    hi FancyTextColorThreeFG guifg=#242021 
+    hi NormalColor guifg=#fff0f5 guibg=#2d2f42
+    hi NormalColorFG guifg=#2d2f42
+    hi NormalAlt guibg=#fe7c8e guifg=#000000
+    hi NormalAltFG guifg=#fe7c8e
+    hi VisualColor guibg=#fff0f5 guifg=#202330
+    hi VisualColorFG guifg=#fff0f5
+    hi InsertColor guibg=#472541 guifg=#fff0f5
+    hi InsertColorFG guifg=#472541
+    hi CommandColor guibg=#6d7a72 guifg=#fff0f5
+    hi CommandColorFG guifg=#6d7a72
 
-  return ""
-end)
+    function! StatuslineMode()
+      let l:mode=mode()
+      if l:mode==#"n"
+        hi link StatusBarColor NormalColor
+        hi link StatusBalloonColor NormalColorFG
+        return "NORMAL"
+      elseif l:mode==?"v"
+        hi link StatusBarColor VisualColor
+        hi link StatusBalloonColor VisualColorFG
+        return "VISUAL"
+      elseif l:mode==#"i"
+        hi link StatusBarColor InsertColor
+        hi link StatusBalloonColor InsertColorFG
+        return "INSERT"
+      elseif l:mode==#"R"
+        return "REPLACE"
+      elseif l:mode==?"s"
+        return "SELECT"
+      elseif l:mode==#"t"
+        return "TERMINAL"
+      elseif l:mode==#"c"
+        hi link StatusBarColor CommandColor
+        hi link StatusBalloonColor CommandColorFG
+        return "COMMAND"
+      elseif l:mode==#"!"
+        return "SHELL"
+      endif
+    endfunction
 
-local git_branch = subscribe.buf_autocmd("el_git_branch", "BufEnter", function(window, buffer)
-  local branch = extensions.git_branch(window, buffer)
-  if branch then
-    return " " .. extensions.git_icon() .. " " .. branch
-  end
-end)
+    function! CheckFT(filetype)
+        if a:filetype == ''
+            return '-'
+        else 
+            "TODO: When this is lua, we can use nvim-web-devicons
+            ""let s = %{WebDevIconsGetFileTypeSymbol()}
+            let s = ""
+            let s .= " "
+            let s .= tolower(a:filetype)
+            return s
+        endif
+    endfunction
 
-local git_changes = subscribe.buf_autocmd("el_git_changes", "BufWritePost", function(window, buffer)
-  return extensions.git_changes(window, buffer)
-end)
+    function! LspStatus() abort
+      if luaeval('#vim.lsp.buf_get_clients() > 0')
+        return " " . luaeval("require('lsp-status').status()")
+      endif
 
-local show_current_func = function(window, buffer)
-  if buffer.filetype == "lua" then
-    return ""
-  end
-
-  return lsp_statusline.current_function(window, buffer)
-end
-
-
-
-require("el").setup {
-  generator = function(window, buffer)
-    local is_minimal = minimal_status_line(window, buffer)
-
-    local items = {
-      { "["},
-      { extensions.gen_mode { format_string = "%s" }, required = true },
-      { "]"},
-      { git_branch },
-      { " " },
-      { sections.split, require = true },
-      { git_icon },
-      { sections.maximum_width(builtin.make_responsive_file(140, 90), 0.40), required = true },
-      { sections.collapse_builtin { { " " }, { builtin.modified_flag } } },
-      { sections.split, required = true },
-      { show_current_func },
-      { lsp_statusline.server_progress },
-      { git_changes },
-      { "[" },
-      { builtin.line_with_width(3) },
-      { ":" },
-      { builtin.column_with_width(2) },
-      { "]" },
-      {
-        sections.collapse_builtin {
-          "[",
-          builtin.help_list,
-          builtin.readonly_list,
-          "]",
-        },
-      },
-      { builtin.filetype },
-    }
-
-    local add_item = function(result, item)
-      if is_minimal and not item.required then
-        return
-      end
-
-      table.insert(result, item)
-    end
-
-    local result = {}
-    for _, item in ipairs(items) do
-      add_item(result, item)
-    end
-
-    return result
-
-  end,
-}
+      return ''
+    endfunction
+]])
